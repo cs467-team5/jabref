@@ -1,6 +1,5 @@
-# CS467 Team 5 fork only: build receipt for the backup restore dialog work (https://github.com/JabRef/jabref/issues/2961).
+# CS467 Team 5 fork only: build receipt for the backup restore dialog work.
 # Runs the backup-related tests under several default time zones, because the dialog will show saved times.
-# Drop this file before the branch is proposed upstream.
 name: Team 5 backup dialog checks
 
 on:
