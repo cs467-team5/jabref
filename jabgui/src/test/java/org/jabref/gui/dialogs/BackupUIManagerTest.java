@@ -7,8 +7,10 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
-import javafx.scene.layout.StackPane;
+import javafx.scene.Node;
+import javafx.scene.control.Labeled;
 
 import org.jabref.gui.DialogService;
 import org.jabref.gui.JabRefGuiStateManager;
@@ -41,9 +43,7 @@ import org.jabref.model.groups.GroupTreeNode;
 import org.jabref.model.util.FileUpdateMonitor;
 
 import com.airhacks.afterburner.injection.Injector;
-import org.controlsfx.control.HyperlinkLabel;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -168,21 +168,17 @@ class BackupUIManagerTest extends JavaFxTest {
         Path backupFile = BackupFileUtil.getPathForNewBackupFileAndCreateDirectory(originalFile, BackupFileType.BACKUP, tempDir.resolve("backups"));
         Files.write(backupFile, new byte[2048]);
 
-        AtomicReference<@Nullable String> dialogContent = new AtomicReference<>();
+        AtomicReference<List<String>> cells = new AtomicReference<>(List.of());
         interact(() -> {
-            BackupResolverDialog dialog = new BackupResolverDialog(originalFile, backupFile.getParent(), mock(ExternalApplicationsPreferences.class), mock(ImportFormatPreferences.class), new CurrentThreadTaskExecutor());
-            StackPane content = (StackPane) dialog.getDialogPane().getContent();
-            HyperlinkLabel hyperlink = (HyperlinkLabel) content.getChildren().getFirst();
-            dialogContent.set(hyperlink.getText());
+            BackupResolverDialog dialog = new BackupResolverDialog(originalFile, backupFile.getParent(),
+                    mock(ExternalApplicationsPreferences.class), mock(ImportFormatPreferences.class), new CurrentThreadTaskExecutor());
+            Node content = dialog.getDialogPane().getContent();
+            cells.set(Stream.of("#currentSize", "#backupSize", "#backupName")
+                            .map(id -> ((Labeled) content.lookup(id)).getText())
+                            .toList());
         });
 
-        assertEquals("""
-                A backup file for 'library.bib' was found at [%s]
-                Current library size: 1 KB
-                Backup size: 2 KB
-                This could indicate that JabRef did not shut down cleanly last time the file was used.
-
-                Do you want to recover the library from the backup file?""".formatted(backupFile.getFileName()), dialogContent.get());
+        assertEquals(List.of("1 KB", "2 KB", backupFile.getFileName().toString()), cells.get());
     }
 
     /// A conflict-aborted original produces an invalid, empty result. Reviewing the backup merges content into that
