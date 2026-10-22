@@ -15,8 +15,10 @@ import org.jabref.gui.frame.ExternalApplicationsPreferences;
 import org.jabref.gui.keyboard.KeyBindingRepository;
 import org.jabref.gui.testutils.JavaFxTest;
 import org.jabref.gui.util.DialogButtonAssertions;
+import org.jabref.logic.importer.ImportFormatPreferences;
 import org.jabref.logic.l10n.Language;
 import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.util.CurrentThreadTaskExecutor;
 
 import com.airhacks.afterburner.injection.Injector;
 import org.junit.jupiter.api.AfterEach;
@@ -61,7 +63,11 @@ class BackupResolverDialogTest extends JavaFxTest {
         Window.getWindows().addListener(raisedFontSizeListener);
 
         backupResolverDialog = new BackupResolverDialog(
-                Path.of("library.bib"), Path.of("backups"), mock(ExternalApplicationsPreferences.class));
+                Path.of("library.bib"),
+                Path.of("backups"),
+                mock(ExternalApplicationsPreferences.class),
+                mock(ImportFormatPreferences.class),
+                new CurrentThreadTaskExecutor());
         backupResolverDialog.initOwner(stage);
         interact(backupResolverDialog::show);
     }

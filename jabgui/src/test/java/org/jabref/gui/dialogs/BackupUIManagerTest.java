@@ -21,6 +21,7 @@ import org.jabref.gui.frame.ExternalApplicationsPreferences;
 import org.jabref.gui.preferences.GuiPreferences;
 import org.jabref.gui.preview.PreviewPreferences;
 import org.jabref.gui.testutils.JavaFxTest;
+import org.jabref.logic.importer.ImportFormatPreferences;
 import org.jabref.logic.importer.ParserResult;
 import org.jabref.logic.journals.JournalAbbreviationRepository;
 import org.jabref.logic.l10n.Language;
@@ -28,6 +29,7 @@ import org.jabref.logic.l10n.Localization;
 import org.jabref.logic.layout.LayoutFormatterPreferences;
 import org.jabref.logic.preview.TextBasedPreviewLayout;
 import org.jabref.logic.util.BackupFileType;
+import org.jabref.logic.util.CurrentThreadTaskExecutor;
 import org.jabref.logic.util.TaskExecutor;
 import org.jabref.logic.util.io.BackupFileUtil;
 import org.jabref.model.database.BibDatabaseContext;
@@ -70,6 +72,7 @@ class BackupUIManagerTest extends JavaFxTest {
         dialogService = mock(DialogService.class);
         preferences = mock(GuiPreferences.class, Answers.RETURNS_DEEP_STUBS);
         when(preferences.getExternalApplicationsPreferences()).thenReturn(mock(ExternalApplicationsPreferences.class));
+        Injector.setModelOrService(TaskExecutor.class, new CurrentThreadTaskExecutor());
     }
 
     @AfterEach
@@ -167,7 +170,7 @@ class BackupUIManagerTest extends JavaFxTest {
 
         AtomicReference<@Nullable String> dialogContent = new AtomicReference<>();
         interact(() -> {
-            BackupResolverDialog dialog = new BackupResolverDialog(originalFile, backupFile.getParent(), mock(ExternalApplicationsPreferences.class));
+            BackupResolverDialog dialog = new BackupResolverDialog(originalFile, backupFile.getParent(), mock(ExternalApplicationsPreferences.class), mock(ImportFormatPreferences.class), new CurrentThreadTaskExecutor());
             StackPane content = (StackPane) dialog.getDialogPane().getContent();
             HyperlinkLabel hyperlink = (HyperlinkLabel) content.getChildren().getFirst();
             dialogContent.set(hyperlink.getText());

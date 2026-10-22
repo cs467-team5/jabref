@@ -12,7 +12,9 @@ import javafx.scene.layout.StackPane;
 import org.jabref.gui.FXDialog;
 import org.jabref.gui.desktop.os.NativeDesktop;
 import org.jabref.gui.frame.ExternalApplicationsPreferences;
+import org.jabref.logic.importer.ImportFormatPreferences;
 import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.util.TaskExecutor;
 import org.jabref.logic.util.io.BackupFileUtil;
 import org.jabref.logic.util.io.FileUtil;
 
@@ -27,7 +29,11 @@ public class BackupResolverDialog extends FXDialog {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BackupResolverDialog.class);
 
-    public BackupResolverDialog(Path originalPath, Path backupDir, ExternalApplicationsPreferences externalApplicationsPreferences) {
+    public BackupResolverDialog(Path originalPath,
+                                Path backupDir,
+                                ExternalApplicationsPreferences externalApplicationsPreferences,
+                                ImportFormatPreferences importFormatPreferences,
+                                TaskExecutor taskExecutor) {
         super(AlertType.CONFIRMATION, Localization.lang("Backup found"), true);
         setHeaderText(null);
         getDialogPane().getButtonTypes().setAll(RESTORE_FROM_BACKUP, REVIEW_BACKUP, IGNORE_BACKUP);
