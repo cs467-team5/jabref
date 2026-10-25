@@ -3,10 +3,8 @@
 name: Team 5 backup dialog checks
 
 on:
+  # Every push to any branch, main included
   push:
-    branches:
-      - 'claude/jabref-2961-**'
-      - 'jabref-2961**'
   pull_request:
   workflow_dispatch:
 
