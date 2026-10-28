@@ -146,11 +146,11 @@ public class BackupResolverDialog extends FXDialog {
         currentEntries.setText(format(comparison.current().entryCount()));
         backupEntries.setText(format(comparison.backup().entryCount()));
         backupChanges.setText(comparison.changes()
-                .map(changes -> changes.added() == 0 && changes.removed() == 0 && changes.modified() == 0
-                        ? Localization.lang("No entry changes")
-                        : Localization.lang("removed: %0, added: %1, modified: %2",
-                                String.valueOf(changes.removed()), String.valueOf(changes.added()), String.valueOf(changes.modified())))
-                .orElse(UNKNOWN));
+                                        .map(changes -> changes.added() == 0 && changes.removed() == 0 && changes.modified() == 0
+                                                        ? Localization.lang("No entry changes")
+                                                        : Localization.lang("removed: %0, added: %1, modified: %2",
+                                                String.valueOf(changes.removed()), String.valueOf(changes.added()), String.valueOf(changes.modified())))
+                                        .orElse(UNKNOWN));
     }
 
     private void setCountsUnknown() {
