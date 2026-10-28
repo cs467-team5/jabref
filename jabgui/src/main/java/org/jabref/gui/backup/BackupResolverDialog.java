@@ -7,6 +7,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 import javafx.scene.Node;
 import javafx.scene.control.ButtonBar;
@@ -21,8 +22,11 @@ import javafx.scene.layout.VBox;
 import org.jabref.gui.FXDialog;
 import org.jabref.gui.desktop.os.NativeDesktop;
 import org.jabref.gui.frame.ExternalApplicationsPreferences;
+import org.jabref.logic.bibtex.comparator.BackupComparator;
+import org.jabref.logic.bibtex.comparator.BackupComparison;
 import org.jabref.logic.importer.ImportFormatPreferences;
 import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.util.BackgroundTask;
 import org.jabref.logic.util.TaskExecutor;
 import org.jabref.logic.util.io.BackupFileUtil;
 import org.jabref.logic.util.io.FileUtil;
@@ -39,6 +43,10 @@ public class BackupResolverDialog extends FXDialog {
     private static final String UNKNOWN = "–";
     private static final double NAME_CELL_MAX_WIDTH = 240;
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).withZone(ZoneId.systemDefault());
+
+    private final Label currentEntries;
+    private final Label backupEntries;
+    private final Label backupChanges;
 
     public BackupResolverDialog(Path originalPath,
                                 Path backupDir,
@@ -65,12 +73,32 @@ public class BackupResolverDialog extends FXDialog {
                 value("currentModified", formatModified(originalPath)),
                 value("backupModified", backupPathOpt.map(this::formatModified).orElse(UNKNOWN)));
 
+        // Rows are filled before the task starts: in tests CurrentThreadTaskExecutor runs onSuccess/onFailure inside executeWith, while the constructor is still running
+        String initial = backupPathOpt.isPresent() ? Localization.lang("Calculating...") : UNKNOWN;
+        currentEntries = value("currentEntries", initial);
+        backupEntries = value("backupEntries", initial);
+        backupChanges = value("backupChanges", initial);
+        table.addRow(4, new Label(Localization.lang("Number of entries")), currentEntries, backupEntries);
+        table.addRow(5, new Label(Localization.lang("Changes")), new Label(UNKNOWN), backupChanges);
+
         VBox content = new VBox(10,
                 wrapped(Localization.lang("A newer backup of this library was found.")),
                 wrapped(Localization.lang("This could indicate that JabRef did not shut down cleanly last time the file was used.")),
                 table,
                 wrapped(Localization.lang("Do you want to recover the library from the backup file?")));
         getDialogPane().setContent(content);
+
+        backupPathOpt.ifPresent(backupPath -> {
+            BackgroundTask<BackupComparison> task = BackgroundTask
+                    .wrap(() -> BackupComparator.compare(originalPath, backupPath, importFormatPreferences))
+                    .onSuccess(this::fillCounts)
+                    .onFailure(e -> {
+                        LOGGER.warn("Could not compare library with backup", e);
+                        setCountsUnknown();
+                    });
+            setOnHidden(_ -> task.cancel());
+            task.executeWith(taskExecutor);
+        });
     }
 
     private static Label header(String text) {
@@ -112,6 +140,27 @@ public class BackupResolverDialog extends FXDialog {
             LOGGER.debug("Could not read modification time of {}", file, ex);
             return UNKNOWN;
         }
+    }
+
+    private void fillCounts(BackupComparison comparison) {
+        currentEntries.setText(format(comparison.current().entryCount()));
+        backupEntries.setText(format(comparison.backup().entryCount()));
+        backupChanges.setText(comparison.changes()
+                .map(changes -> changes.added() == 0 && changes.removed() == 0 && changes.modified() == 0
+                        ? Localization.lang("No entry changes")
+                        : Localization.lang("removed: %0, added: %1, modified: %2",
+                                String.valueOf(changes.removed()), String.valueOf(changes.added()), String.valueOf(changes.modified())))
+                .orElse(UNKNOWN));
+    }
+
+    private void setCountsUnknown() {
+        currentEntries.setText(UNKNOWN);
+        backupEntries.setText(UNKNOWN);
+        backupChanges.setText(UNKNOWN);
+    }
+
+    private static String format(OptionalInt count) {
+        return count.isPresent() ? String.valueOf(count.getAsInt()) : UNKNOWN;
     }
 
     private static Label wrapped(String text) {
