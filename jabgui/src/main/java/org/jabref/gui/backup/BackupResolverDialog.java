@@ -160,7 +160,7 @@ public class BackupResolverDialog extends FXDialog {
     }
 
     private static String format(OptionalInt count) {
-        return count.isPresent() ? String.valueOf(count.getAsInt()) : UNKNOWN;
+        return count.isPresent() ? String.valueOf(count.orElseThrow()) : UNKNOWN;
     }
 
     private static Label wrapped(String text) {
